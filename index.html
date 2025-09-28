@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vacaciones Perfectas | Flybondi Challenge</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-yellow-100 min-h-screen flex flex-col items-center justify-start font-sans">
+  <header class="w-full py-8 bg-yellow-400 shadow-lg flex flex-col items-center">
+    <img src="https://flybondi.com/static/media/logo.9b7e6b2e.svg" alt="Flybondi" class="w-40 mb-2">
+    <h1 class="text-4xl font-extrabold text-blue-900 drop-shadow-lg mb-1">Vacaciones Perfectas</h1>
+    <p class="text-lg text-blue-800 font-medium">Para Nelsona y Valentina ✈️</p>
+  </header>
+
+  <main class="w-full max-w-3xl mt-10 bg-white rounded-3xl shadow-2xl p-8 flex flex-col gap-8">
+    <section class="text-center">
+      <h2 class="text-2xl font-bold text-blue-700 mb-2">Tus mejores opciones de viaje</h2>
+      <p class="text-gray-600">¡Descubrí las mejores combinaciones de vuelos ida y vuelta dentro de tu presupuesto!</p>
+    </section>
+    <!-- Presupuesto input -->
+    <section class="flex flex-col items-center gap-2">
+      <label for="budget-input" class="text-blue-900 font-semibold">Presupuesto máximo ($)</label>
+      <div class="flex gap-2">
+        <input id="budget-input" type="number" min="1" value="800" class="border border-yellow-400 rounded-lg px-4 py-2 text-blue-900 font-bold w-32 text-center focus:outline-none focus:ring-2 focus:ring-yellow-400 transition" />
+        <button id="search-btn" class="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold py-2 px-6 rounded-full shadow transition">🔍 Buscar</button>
+      </div>
+    </section>
+    <section id="vacation-results" class="flex flex-col gap-6">
+      <!-- Resultados de vacaciones se insertan aquí -->
+    </section>
+    <footer class="text-center text-gray-400 text-sm mt-8">
+      Flybondi Challenge &copy; 2025 | Hecho con ❤️ para Nelsona y Valentina
+    </footer>
+  </main>
+
+  <script src="./src/flybondi.js"></script>
+  <script type="module">
+  document.addEventListener('DOMContentLoaded', () => {
+    // Aseguramos que sampleFlights esté disponible en window
+    if (!window.sampleFlights) {
+      window.sampleFlights = [
+        { origin: "Buenos Aires", destination: "Mendoza", price: 180, availability: 15, date: "2024-03-15" },
+        { origin: "Buenos Aires", destination: "Bariloche", price: 220, availability: 8, date: "2024-03-20" },
+        { origin: "Buenos Aires", destination: "Salta", price: 160, availability: 12, date: "2024-04-01" },
+        { origin: "Buenos Aires", destination: "Puerto Madryn", price: 200, availability: 10, date: "2024-03-25" },
+        { origin: "Buenos Aires", destination: "Ushuaia", price: 350, availability: 6, date: "2024-02-28" },
+        { origin: "Mendoza", destination: "Buenos Aires", price: 170, availability: 15, date: "2024-03-22" },
+        { origin: "Mendoza", destination: "Buenos Aires", price: 185, availability: 12, date: "2024-03-29" },
+        { origin: "Bariloche", destination: "Buenos Aires", price: 210, availability: 8, date: "2024-03-27" },
+        { origin: "Bariloche", destination: "Buenos Aires", price: 240, availability: 6, date: "2024-04-03" },
+        { origin: "Salta", destination: "Buenos Aires", price: 150, availability: 12, date: "2024-04-08" },
+        { origin: "Salta", destination: "Buenos Aires", price: 165, availability: 10, date: "2024-04-15" },
+        { origin: "Puerto Madryn", destination: "Buenos Aires", price: 190, availability: 10, date: "2024-04-01" },
+        { origin: "Puerto Madryn", destination: "Buenos Aires", price: 210, availability: 8, date: "2024-04-08" },
+        { origin: "Ushuaia", destination: "Buenos Aires", price: 380, availability: 6, date: "2024-03-07" },
+        { origin: "Ushuaia", destination: "Buenos Aires", price: 320, availability: 4, date: "2024-03-14" },
+      ];
+    }
+
+    let lastResults = null;
+    let showingAll = false;
+
+    function renderResults(budget, showAll = false) {
+      let parsedBudget = Number(budget);
+      if (isNaN(parsedBudget) || parsedBudget < 1) parsedBudget = 800;
+
+      const vacationFinder = new VacationFinder(window.sampleFlights);
+      const results = vacationFinder.findBestVacations(parsedBudget);
+      lastResults = results; // Guardamos para mostrar todas si hace falta
+      showingAll = showAll;
+
+      const section = document.getElementById('vacation-results');
+      section.innerHTML = '';
+
+      const summary = results.summary;
+      if (!results.recommendations || results.recommendations.length === 0) {
+        section.innerHTML = `
+          <div class="flex flex-col items-center justify-center bg-red-50 rounded-xl p-8 shadow gap-4">
+            <span class="text-5xl">😔</span>
+            <div class="text-2xl font-bold text-red-700">No encontramos opciones dentro de tu presupuesto.</div>
+            <div class="text-blue-600">Probá ajustando tu búsqueda o aumentá el presupuesto para ver más opciones.</div>
+            <div class="text-blue-400 text-sm mt-2">👨‍👩‍👧‍👦 Opciones familiares: <span class="font-bold">${summary?.familyOptions ?? 0}</span></div>
+          </div>
+        `;
+        return;
+      }
+
+      section.innerHTML += `
+        <div class="bg-blue-50 rounded-xl p-4 shadow flex flex-col gap-2">
+          <div class="text-xl font-semibold text-blue-800">${summary.message}</div>
+          ${summary.cheapest ? `<div class="text-green-700">${summary.cheapest}</div>` : ''}
+          ${summary.longest ? `<div class="text-purple-700">${summary.longest}</div>` : ''}
+          <div class="text-blue-600">👨‍👩‍👧‍👦 Opciones familiares: <span class="font-bold">${summary.familyOptions ?? 0}</span></div>
+        </div>
+      `;
+
+      const optionsToShow = showAll ? results.recommendations : results.recommendations.slice(0, 3);
+
+      section.innerHTML += `
+        <div>
+          <h3 class="text-lg font-bold text-yellow-700 mb-2 mt-4">🏆 ${showAll ? "Todas las opciones" : "Top 3 Recomendaciones"}</h3>
+          <div class="grid gap-4">
+            ${optionsToShow.map((opt, i) => `
+              <div class="bg-white border-l-8 border-yellow-400 rounded-lg shadow p-4 flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl font-bold text-blue-900">${i+1}.</span>
+                  <span class="text-xl font-semibold text-blue-800">${opt.destination}</span>
+                </div>
+                <div class="text-blue-700">💰 $${opt.totalPrice} <span class="text-green-600">(Ahorro $${opt.savings})</span></div>
+                <div class="text-gray-600">📅 Ida: ${vacationFinder.formatDate(opt.outbound.date)} | Vuelta: ${vacationFinder.formatDate(opt.return.date)}</div>
+                <div class="text-gray-700">⏰ Duración: ${opt.stayDuration} días</div>
+                <div class="text-yellow-700">🎯 ${opt.recommendation}</div>
+                <div class="text-blue-500">🌤️ ${opt.seasonInfo}</div>
+                <div class="text-gray-500">👥 Disponibilidad: ${opt.totalAvailability} asientos</div>
+              </div>
+            `).join('')}
+          </div>
+          ${!showAll && results.recommendations.length > 3 ? `
+            <div class="flex justify-center mt-6">
+              <button id="show-all-btn" class="bg-blue-100 hover:bg-blue-200 text-blue-900 font-bold py-2 px-6 rounded-full shadow transition">
+                Ver todas las opciones
+              </button>
+            </div>
+          ` : ''}
+          ${showAll && results.recommendations.length > 3 ? `
+            <div class="flex justify-center mt-6">
+              <button id="show-top-btn" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-900 font-bold py-2 px-6 rounded-full shadow transition">
+                Ver solo el Top 3
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      // Agregar listeners a los botones dinámicos
+      setTimeout(() => {
+        const showAllBtn = document.getElementById('show-all-btn');
+        if (showAllBtn) {
+          showAllBtn.onclick = () => renderResults(parsedBudget, true);
+        }
+        const showTopBtn = document.getElementById('show-top-btn');
+        if (showTopBtn) {
+          showTopBtn.onclick = () => renderResults(parsedBudget, false);
+        }
+      }, 0);
+    }
+
+    // Mostrar resultados iniciales con presupuesto por defecto
+    const budgetInput = document.getElementById('budget-input');
+    renderResults(Number(budgetInput.value) || 800);
+
+    document.getElementById('search-btn').addEventListener('click', () => {
+      let budget = Number(budgetInput.value);
+      if (isNaN(budget) || budget < 1) budget = 800;
+      renderResults(budget);
+    });
+  });
+  </script>
+</body>
+</html>
